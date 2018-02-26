@@ -1,0 +1,53 @@
+import pyspark
+from pyspark import SparkContext
+from pyspark import SparkConf
+from pyspark.sql import SparkSession
+import numpy as np
+
+conf = SparkConf()
+conf.set("spark.executor.memory", "6G")
+conf.set("spark.driver.memory", "2G")
+conf.set("spark.executor.cores", "4")
+ 
+conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+conf.set("spark.default.parallelism", "4")
+conf.setMaster('local[4]')
+ 
+spark = SparkSession \
+    .builder.config(conf=conf) \
+    .appName("spark-santander-recommendation").getOrCreate()
+
+full = spark.read.csv("../input/train_ver2.csv", header="true",inferSchema="true").select('ncodpers','fecha_dato','ind_ahor_fin_ult1', 'ind_aval_fin_ult1', 'ind_cco_fin_ult1', 'ind_cder_fin_ult1', 'ind_cno_fin_ult1', 'ind_ctju_fin_ult1', 'ind_ctma_fin_ult1', 'ind_ctop_fin_ult1', 'ind_ctpp_fin_ult1', 'ind_deco_fin_ult1', 'ind_deme_fin_ult1', 'ind_dela_fin_ult1', 'ind_ecue_fin_ult1', 'ind_fond_fin_ult1', 'ind_hip_fin_ult1', 'ind_plan_fin_ult1', 'ind_pres_fin_ult1', 'ind_reca_fin_ult1', 'ind_tjcr_fin_ult1', 'ind_valo_fin_ult1', 'ind_viv_fin_ult1', 'ind_nomina_ult1', 'ind_nom_pens_ult1', 'ind_recibo_ult1')
+
+df=full[(full['fecha_dato']=='2015-06-28')].select('ncodpers','ind_ahor_fin_ult1', 'ind_aval_fin_ult1', 
+                                                 'ind_cco_fin_ult1', 'ind_cder_fin_ult1', 'ind_cno_fin_ult1', 
+                                                 'ind_ctju_fin_ult1', 'ind_ctma_fin_ult1', 'ind_ctop_fin_ult1', 
+                                                 'ind_ctpp_fin_ult1', 'ind_deco_fin_ult1', 'ind_deme_fin_ult1', 
+                                                 'ind_dela_fin_ult1', 'ind_ecue_fin_ult1', 'ind_fond_fin_ult1', 
+                                                 'ind_hip_fin_ult1', 'ind_plan_fin_ult1', 'ind_pres_fin_ult1', 
+                                                 'ind_reca_fin_ult1', 'ind_tjcr_fin_ult1', 'ind_valo_fin_ult1', 
+                                                 'ind_viv_fin_ult1', 'ind_nomina_ult1', 'ind_nom_pens_ult1', 
+                                                 'ind_recibo_ult1')
+ 
+df_val=full[full['fecha_dato']=='2016-05-28'].select('ncodpers','ind_ahor_fin_ult1', 'ind_aval_fin_ult1', 
+                                                 'ind_cco_fin_ult1', 'ind_cder_fin_ult1', 'ind_cno_fin_ult1', 
+                                                 'ind_ctju_fin_ult1', 'ind_ctma_fin_ult1', 'ind_ctop_fin_ult1', 
+                                                 'ind_ctpp_fin_ult1', 'ind_deco_fin_ult1', 'ind_deme_fin_ult1', 
+                                                 'ind_dela_fin_ult1', 'ind_ecue_fin_ult1', 'ind_fond_fin_ult1', 
+                                                 'ind_hip_fin_ult1', 'ind_plan_fin_ult1', 'ind_pres_fin_ult1', 
+                                                 'ind_reca_fin_ult1', 'ind_tjcr_fin_ult1', 'ind_valo_fin_ult1', 
+                                                 'ind_viv_fin_ult1', 'ind_nomina_ult1', 'ind_nom_pens_ult1', 
+                                                 'ind_recibo_ult1')
+
+import pandas as pd 
+lista_users= pd.read_csv("../input/test_ver2.csv", usecols=["ncodpers"])
+
+lista_users["ncodpers"].values[:10]
+
+lista_products=['ind_ahor_fin_ult1', 'ind_aval_fin_ult1', 'ind_cco_fin_ult1', 'ind_cder_fin_ult1', 'ind_cno_fin_ult1', 'ind_ctju_fin_ult1', 'ind_ctma_fin_ult1', 'ind_ctop_fin_ult1', 'ind_ctpp_fin_ult1', 'ind_deco_fin_ult1', 'ind_deme_fin_ult1', 'ind_dela_fin_ult1', 'ind_ecue_fin_ult1', 'ind_fond_fin_ult1', 'ind_hip_fin_ult1', 'ind_plan_fin_ult1', 'ind_pres_fin_ult1', 'ind_reca_fin_ult1', 'ind_tjcr_fin_ult1', 'ind_valo_fin_ult1', 'ind_viv_fin_ult1', 'ind_nomina_ult1', 'ind_nom_pens_ult1', 'ind_recibo_ult1']
+
+from pyspark.sql import Row
+ratingsRDD = df.rdd.map(lambda p: Row(userId=p[0], itemCol=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],rating=p[-24:]))
+ratings = spark.createDataFrame(ratingsRDD)
+ratingsRDD_val = df_val.rdd.map(lambda p: Row(userId=p[0], itemCol=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],rating=p[-24:]))
+val = spark.createDataFrame(ratingsRDD_val)
